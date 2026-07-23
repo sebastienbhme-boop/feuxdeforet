@@ -1,36 +1,30 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+## Feux de forêt en direct
 
-## Getting Started
+Application Next.js qui affiche une carte en direct des feux de forêt actifs (France métropolitaine). Au clic sur un foyer, un bouton ouvre dans un nouvel onglet une recherche Google Mode IA pour trouver l'actualité et les vidéos (YouTube, TikTok) liées au sinistre.
 
-First, run the development server:
+### Sources de données
+
+- **Feux** : [NASA FIRMS](https://firms.modaps.eosdis.nasa.gov/) (satellite VIIRS, quasi temps réel) + [Copernicus EFFIS](https://effis.jrc.ec.europa.eu/) pour l'Europe.
+- **Lieu** : les coordonnées des foyers sont converties en nom de commune via [Nominatim](https://nominatim.openstreetmap.org/) (OpenStreetMap, gratuit, sans clé).
+- **Actualités/vidéos** : bouton "Recherche Google" qui ouvre un nouvel onglet avec une recherche Google Mode IA demandant explicitement des vidéos YouTube et TikTok du sinistre.
+
+### Configuration
+
+1. Copier `.env.example` en `.env.local`.
+2. Renseigner `FIRMS_MAP_KEY` (gratuit) pour avoir les vraies données de feux.
+
+Sans clé, l'app tourne en mode démonstration (données fictives, bandeau d'avertissement affiché).
+
+### Développement
 
 ```bash
+npm install
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Ouvrir [http://localhost:3000](http://localhost:3000).
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+### Limites connues
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
-
-## Learn More
-
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- EFFIS expose ses données via un endpoint WFS public dont le schéma peut évoluer ; le connecteur échoue silencieusement (fail-soft) si le format change, pour ne pas casser l'affichage des données FIRMS.
+- Le rafraîchissement des foyers se fait toutes les heures côté client, ce qui correspond au rythme de mise à jour des sources satellite.

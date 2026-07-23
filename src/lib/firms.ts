@@ -1,0 +1,82 @@
+import type { FirePoint } from "./types";
+import { isInMainlandFrance } from "./franceBoundary";
+import { filterPersistentSources, LOOKBACK_DAYS } from "./industrialFilter";
+
+// NASA FIRMS area API returns CSV. Docs: https://firms.modaps.eosdis.nasa.gov/api/area/
+// MAP_KEY is a free key from https://firms.modaps.eosdis.nasa.gov/api/map_key/
+const FIRMS_BASE = "https://firms.modaps.eosdis.nasa.gov/api/area/csv";
+
+// Bounding box tightly covering mainland France (incl. Corsica): west,south,east,north
+const FRANCE_BBOX = "-5.2,41,9.7,51.1";
+
+// Querying all three VIIRS polar satellites instead of just SNPP roughly triples
+// the number of daily passes over France (each satellite has its own orbit/pass
+// time), which is the closest we can get to "more real-time" without switching
+// to the geostationary product (only available via WMS, not the simple CSV API).
+const VIIRS_SOURCES = ["VIIRS_SNPP_NRT", "VIIRS_NOAA20_NRT", "VIIRS_NOAA21_NRT"] as const;
+
+// How many of the fetched days are actually shown to the user; the extra
+// lookback days are only used to detect persistent (industrial) sources.
+const DISPLAY_DAYS = 2;
+
+function parseCsv(csv: string): Record<string, string>[] {
+  const lines = csv.trim().split("\n");
+  if (lines.length < 2) return [];
+  const headers = lines[0].split(",");
+  return lines.slice(1).map((line) => {
+    const values = line.split(",");
+    const row: Record<string, string> = {};
+    headers.forEach((h, i) => {
+      row[h.trim()] = values[i]?.trim() ?? "";
+    });
+    return row;
+  });
+}
+
+async function fetchViirsSource(mapKey: string, source: string): Promise<FirePoint[]> {
+  const url = `${FIRMS_BASE}/${mapKey}/${source}/${FRANCE_BBOX}/${LOOKBACK_DAYS}`;
+
+  const res = await fetch(url, { next: { revalidate: 600 } });
+  if (!res.ok) {
+    throw new Error(`FIRMS request failed for ${source}: ${res.status}`);
+  }
+  const csv = await res.text();
+  // FIRMS returns HTTP 200 with a plain-text error body (e.g. "Invalid day
+  // range...") instead of an HTTP error status, so check the content shape too.
+  if (!csv.trim().startsWith("country_id") && !csv.trim().startsWith("latitude")) {
+    throw new Error(`FIRMS returned an unexpected response for ${source}: ${csv.slice(0, 200)}`);
+  }
+  const rows = parseCsv(csv);
+
+  return rows
+    .filter((r) => r.latitude && r.longitude)
+    .map((r) => ({
+      id: `firms-${source}-${r.latitude}-${r.longitude}-${r.acq_date}-${r.acq_time}`,
+      source: "FIRMS" as const,
+      lat: Number(r.latitude),
+      lon: Number(r.longitude),
+      acquiredAt: `${r.acq_date}T${r.acq_time?.padStart(4, "0").replace(/(\d{2})(\d{2})/, "$1:$2")}:00Z`,
+      confidence: r.confidence,
+      brightness: r.bright_ti4 ? Number(r.bright_ti4) : undefined,
+      frp: r.frp ? Number(r.frp) : undefined,
+      satellite: r.satellite,
+    }))
+    .filter((fire) => isInMainlandFrance(fire.lat, fire.lon));
+}
+
+export async function fetchFirmsFires(): Promise<FirePoint[]> {
+  const mapKey = process.env.FIRMS_MAP_KEY;
+  if (!mapKey) {
+    return [];
+  }
+
+  const results = await Promise.allSettled(
+    VIIRS_SOURCES.map((source) => fetchViirsSource(mapKey, source)),
+  );
+
+  const allFires = results.flatMap((r) => (r.status === "fulfilled" ? r.value : []));
+  const withoutIndustrialSources = filterPersistentSources(allFires);
+
+  const cutoff = Date.now() - DISPLAY_DAYS * 24 * 60 * 60 * 1000;
+  return withoutIndustrialSources.filter((fire) => new Date(fire.acquiredAt).getTime() >= cutoff);
+}
