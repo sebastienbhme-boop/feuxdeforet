@@ -62,7 +62,7 @@ function FireMarker({ fire }: { fire: FirePoint }) {
           <p>Source : {fire.source}</p>
           <p>Détecté : {formatParisDateTime(fire.acquiredAt)} (heure de Paris)</p>
           {fire.frp !== undefined && <p>Puissance radiative : {fire.frp} MW</p>}
-          <div className="mt-2">
+          <div className="mt-2 flex justify-center">
             <a
               href={googleSearchUrl(place)}
               target="_blank"
