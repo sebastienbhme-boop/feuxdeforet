@@ -68,6 +68,7 @@ function FireMarker({ fire }: { fire: FirePoint }) {
               target="_blank"
               rel="noopener noreferrer"
               className="rounded bg-blue-600 px-2 py-1 text-white"
+              style={{ color: "#ffffff", textDecoration: "none", display: "inline-block" }}
             >
               Recherche Google
             </a>
