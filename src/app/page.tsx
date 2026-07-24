@@ -3,8 +3,9 @@
 import dynamic from "next/dynamic";
 import { useEffect, useMemo, useState } from "react";
 import type { FirePoint } from "@/lib/types";
-import { formatParisDateTime, formatParisTime, isNightTime } from "@/lib/formatDate";
+import { formatParisDateTime, formatParisTime, isNightTime, isSatellitePassLikely } from "@/lib/formatDate";
 import TimelineSlider from "@/components/TimelineSlider";
+import FaqModal from "@/components/FaqModal";
 
 const FireMap = dynamic(() => import("@/components/FireMap"), { ssr: false });
 
@@ -14,6 +15,7 @@ export default function Home() {
   const [updatedAt, setUpdatedAt] = useState<string | null>(null);
   const [demo, setDemo] = useState(false);
   const [timelineValue, setTimelineValue] = useState<number | null>(null);
+  const [faqOpen, setFaqOpen] = useState(false);
 
   useEffect(() => {
     async function load() {
@@ -35,8 +37,20 @@ export default function Home() {
       }
     }
     load();
-    const interval = setInterval(load, 60 * 60 * 1000); // refresh every hour
-    return () => clearInterval(interval);
+
+    // Poll every 10min during likely satellite pass windows (matches the
+    // server-side cache TTL), and only once an hour otherwise as a safety
+    // net — no point hammering the API when no new pass is expected.
+    let timeoutId: ReturnType<typeof setTimeout>;
+    function scheduleNext() {
+      const delay = isSatellitePassLikely(Date.now()) ? 10 * 60 * 1000 : 60 * 60 * 1000;
+      timeoutId = setTimeout(async () => {
+        await load();
+        scheduleNext();
+      }, delay);
+    }
+    scheduleNext();
+    return () => clearTimeout(timeoutId);
   }, []);
 
   const { minTime, maxTime } = useMemo(() => {
@@ -65,7 +79,14 @@ export default function Home() {
               : `${visibleFires.length}/${fires.length} foyer(s) affiché(s)${updatedAt ? ` · mis à jour ${formatParisTime(updatedAt)} (heure de Paris)` : ""}`}
           </p>
         </div>
+        <button
+          onClick={() => setFaqOpen(true)}
+          className="rounded border border-zinc-300 px-3 py-1.5 text-xs font-medium text-zinc-700 hover:bg-zinc-100 dark:border-zinc-700 dark:text-zinc-300 dark:hover:bg-zinc-800"
+        >
+          FAQ
+        </button>
       </header>
+      {faqOpen && <FaqModal onClose={() => setFaqOpen(false)} />}
       {demo && (
         <div className="border-b border-amber-300 bg-amber-50 px-4 py-2 text-xs text-amber-800 dark:border-amber-900 dark:bg-amber-950 dark:text-amber-200">
           Mode démonstration : aucune clé API n&apos;est configurée, les données affichées sont fictives.
