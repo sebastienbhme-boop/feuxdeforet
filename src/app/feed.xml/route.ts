@@ -1,15 +1,18 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getFires } from "@/lib/getFires";
+import { reverseGeocodeNearbyCity } from "@/lib/reverseGeocode";
 import type { FirePoint } from "@/lib/types";
 
-// Multiple satellites/sources often detect the same wildfire within a short
-// window; group nearby same-day detections into one feed entry instead of
-// flooding the feed with near-duplicates.
-const GRID_PRECISION = 1; // ~11km at this latitude
+// GPS coordinates mean nothing to readers; group fires into rough ~100km
+// areas and name each group after the nearest well-known city instead of
+// listing raw lat/lon per detection.
+const GRID_DEGREES = 1; // ~111km of latitude
 
 function clusterKey(fire: FirePoint): string {
   const day = fire.acquiredAt.slice(0, 10);
-  return `${fire.lat.toFixed(GRID_PRECISION)},${fire.lon.toFixed(GRID_PRECISION)},${day}`;
+  const gridLat = Math.round(fire.lat / GRID_DEGREES) * GRID_DEGREES;
+  const gridLon = Math.round(fire.lon / GRID_DEGREES) * GRID_DEGREES;
+  return `${gridLat},${gridLon},${day}`;
 }
 
 function escapeXml(value: string): string {
@@ -30,27 +33,52 @@ export async function GET(request: NextRequest) {
   const { fires } = await getFires();
   const siteUrl = new URL("/", request.url).toString().replace(/\/$/, "");
 
-  const latestByCluster = new Map<string, FirePoint>();
+  const clusters = new Map<string, FirePoint[]>();
   for (const fire of fires) {
     const key = clusterKey(fire);
-    const current = latestByCluster.get(key);
-    if (!current || fire.acquiredAt > current.acquiredAt) {
-      latestByCluster.set(key, fire);
+    const group = clusters.get(key);
+    if (group) {
+      group.push(fire);
+    } else {
+      clusters.set(key, [fire]);
     }
   }
 
-  const items = [...latestByCluster.values()]
-    .sort((a, b) => (a.acquiredAt < b.acquiredAt ? 1 : -1))
-    .slice(0, 100);
+  const groups = [...clusters.values()]
+    .map((group) => ({
+      group,
+      latest: group.reduce((a, b) => (a.acquiredAt > b.acquiredAt ? a : b)),
+    }))
+    .sort((a, b) => (a.latest.acquiredAt < b.latest.acquiredAt ? 1 : -1))
+    .slice(0, 8);
 
-  const itemsXml = items
-    .map((fire) => {
-      const place = fire.placeName ?? `${fire.lat.toFixed(2)}, ${fire.lon.toFixed(2)}`;
-      const title = `Foyer détecté près de ${place}`;
-      const pubDate = new Date(fire.acquiredAt).toUTCString();
+  // Nominatim is rate-limited (~1 req/s), so resolve places sequentially.
+  // The route is cached 10min (see headers below), so this only runs at
+  // most once every 10 minutes, not per visitor — one geocode per ~100km
+  // area instead of per fire keeps this well within that budget.
+  const places: string[] = [];
+  for (const { latest } of groups) {
+    if (latest.placeName) {
+      places.push(latest.placeName);
+      continue;
+    }
+    const resolved = await reverseGeocodeNearbyCity(latest.lat, latest.lon);
+    places.push(resolved ?? `${latest.lat.toFixed(2)}, ${latest.lon.toFixed(2)}`);
+    await new Promise((r) => setTimeout(r, 1100));
+  }
+
+  const itemsXml = groups
+    .map(({ group, latest }, i) => {
+      const place = places[i];
+      const title =
+        group.length > 1
+          ? `${group.length} foyers détectés vers ${place}`
+          : `Foyer détecté vers ${place}`;
+      const pubDate = new Date(latest.acquiredAt).toUTCString();
+      const maxFrp = Math.max(...group.map((f) => f.frp ?? 0));
       const description = [
-        `Source : ${fire.source}${fire.satellite ? ` (${fire.satellite})` : ""}`,
-        fire.frp !== undefined ? `Puissance radiative : ${fire.frp} MW` : null,
+        `Sources : ${[...new Set(group.map((f) => f.source))].join(", ")}`,
+        maxFrp > 0 ? `Puissance radiative max : ${maxFrp} MW` : null,
       ]
         .filter(Boolean)
         .join(" — ");
@@ -58,7 +86,7 @@ export async function GET(request: NextRequest) {
       return `    <item>
       <title>${escapeXml(title)}</title>
       <link>${escapeXml(googleSearchUrl(place))}</link>
-      <guid isPermaLink="false">${escapeXml(fire.id)}</guid>
+      <guid isPermaLink="false">${escapeXml(latest.id)}</guid>
       <pubDate>${pubDate}</pubDate>
       <description>${escapeXml(description)}</description>
     </item>`;
