@@ -8,7 +8,18 @@ import { reverseGeocode } from "@/lib/reverseGeocode";
 
 const FRANCE_CENTER: [number, number] = [46.6, 2.5];
 
+const PARIS_TIME_ZONE = "Europe/Paris";
+
+function parisDateKey(iso: string): string {
+  return new Date(iso).toLocaleDateString("en-CA", { timeZone: PARIS_TIME_ZONE });
+}
+
+function isToday(fire: FirePoint): boolean {
+  return parisDateKey(fire.acquiredAt) === parisDateKey(new Date().toISOString());
+}
+
 function intensityColor(fire: FirePoint) {
+  if (!isToday(fire)) return "#9ca3af";
   if (fire.frp !== undefined) {
     if (fire.frp > 100) return "#7f1d1d";
     if (fire.frp > 30) return "#dc2626";
