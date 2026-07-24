@@ -92,7 +92,7 @@ export default function Home() {
         </div>
       )}
       <main className="flex flex-1 overflow-hidden">
-        <FireMap fires={visibleFires} />
+        <FireMap fires={visibleFires} referenceTime={timelineValue ?? maxTime} />
       </main>
       {fires.length > 0 && timelineValue !== null && (
         <TimelineSlider

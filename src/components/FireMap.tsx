@@ -8,18 +8,28 @@ import { reverseGeocode } from "@/lib/reverseGeocode";
 
 const FRANCE_CENTER: [number, number] = [46.6, 2.5];
 
-const PARIS_TIME_ZONE = "Europe/Paris";
+// Fresh detections (within a day of the reference time) keep their full
+// intensity color; older ones fade progressively to grey over the following
+// two days, so replaying the timeline shows points arrive in color and age
+// into grey rather than flipping binarily.
+const FRESH_HOURS = 24;
+const FADE_HOURS = 48;
+const GREY = [156, 163, 175] as const; // #9ca3af
 
-function parisDateKey(iso: string): string {
-  return new Date(iso).toLocaleDateString("en-CA", { timeZone: PARIS_TIME_ZONE });
+function hexToRgb(hex: string): [number, number, number] {
+  const n = parseInt(hex.slice(1), 16);
+  return [(n >> 16) & 255, (n >> 8) & 255, n & 255];
 }
 
-function isToday(fire: FirePoint): boolean {
-  return parisDateKey(fire.acquiredAt) === parisDateKey(new Date().toISOString());
+function mixWithGrey(hex: string, t: number): string {
+  const [r, g, b] = hexToRgb(hex);
+  const mr = Math.round(r + (GREY[0] - r) * t);
+  const mg = Math.round(g + (GREY[1] - g) * t);
+  const mb = Math.round(b + (GREY[2] - b) * t);
+  return `rgb(${mr}, ${mg}, ${mb})`;
 }
 
-function intensityColor(fire: FirePoint) {
-  if (!isToday(fire)) return "#9ca3af";
+function baseIntensityColor(fire: FirePoint) {
   if (fire.frp !== undefined) {
     if (fire.frp > 100) return "#7f1d1d";
     if (fire.frp > 30) return "#dc2626";
@@ -27,6 +37,12 @@ function intensityColor(fire: FirePoint) {
     return "#facc15";
   }
   return "#f97316";
+}
+
+function intensityColor(fire: FirePoint, referenceTime: number) {
+  const ageHours = (referenceTime - new Date(fire.acquiredAt).getTime()) / (1000 * 60 * 60);
+  const fadeT = Math.min(1, Math.max(0, (ageHours - FRESH_HOURS) / FADE_HOURS));
+  return mixWithGrey(baseIntensityColor(fire), fadeT);
 }
 
 function googleSearchUrl(place: string) {
@@ -47,16 +63,17 @@ function FitToData({ fires }: { fires: FirePoint[] }) {
   return null;
 }
 
-function FireMarker({ fire }: { fire: FirePoint }) {
+function FireMarker({ fire, referenceTime }: { fire: FirePoint; referenceTime: number }) {
   const [resolvedPlace, setResolvedPlace] = useState<string | null>(fire.placeName ?? null);
 
   const place = resolvedPlace ?? `${fire.lat.toFixed(2)}, ${fire.lon.toFixed(2)}`;
+  const color = intensityColor(fire, referenceTime);
 
   return (
     <CircleMarker
       center={[fire.lat, fire.lon]}
       radius={7}
-      pathOptions={{ color: intensityColor(fire), fillColor: intensityColor(fire), fillOpacity: 0.8 }}
+      pathOptions={{ color, fillColor: color, fillOpacity: 0.8 }}
       eventHandlers={{
         click: () => {
           if (!resolvedPlace) {
@@ -90,7 +107,13 @@ function FireMarker({ fire }: { fire: FirePoint }) {
   );
 }
 
-export default function FireMap({ fires }: { fires: FirePoint[] }) {
+export default function FireMap({
+  fires,
+  referenceTime,
+}: {
+  fires: FirePoint[];
+  referenceTime: number;
+}) {
   return (
     <MapContainer center={FRANCE_CENTER} zoom={6} className="h-full w-full">
       <TileLayer
@@ -99,7 +122,7 @@ export default function FireMap({ fires }: { fires: FirePoint[] }) {
       />
       {fires.length > 0 && <FitToData fires={fires} />}
       {fires.map((fire) => (
-        <FireMarker key={fire.id} fire={fire} />
+        <FireMarker key={fire.id} fire={fire} referenceTime={referenceTime} />
       ))}
     </MapContainer>
   );
