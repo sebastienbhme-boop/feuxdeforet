@@ -9,9 +9,10 @@ export function formatParisTime(iso: string): string {
 }
 
 // VIIRS satellites (SNPP/NOAA-20/NOAA-21) pass over France roughly twice a
-// day (early afternoon and pre-dawn), and NASA's NRT product takes 1-3h to
-// publish after the actual overpass. These windows are widened to cover that
-// publication delay, so polling can back off outside them.
+// day (early afternoon and pre-dawn); MODIS (Terra/Aqua) adds a late-morning
+// pass. NASA's NRT product takes 1-3h to publish after the actual overpass,
+// so these windows are widened to cover that delay, letting polling back off
+// outside them.
 export function isSatellitePassLikely(timestamp: number): boolean {
   const hour = Number(
     new Intl.DateTimeFormat("en-GB", {
@@ -20,5 +21,5 @@ export function isSatellitePassLikely(timestamp: number): boolean {
       hourCycle: "h23",
     }).format(new Date(timestamp)),
   );
-  return (hour >= 12 && hour < 17) || hour < 5;
+  return (hour >= 10 && hour < 17) || hour < 5;
 }

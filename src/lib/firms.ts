@@ -15,6 +15,11 @@ const FRANCE_BBOX = "-5.2,41,9.7,51.1";
 // to the geostationary product (only available via WMS, not the simple CSV API).
 const VIIRS_SOURCES = ["VIIRS_SNPP_NRT", "VIIRS_NOAA20_NRT", "VIIRS_NOAA21_NRT"] as const;
 
+// MODIS (Aqua/Terra) passes over France at different times than the VIIRS
+// satellites, filling in some of the hours where no VIIRS pass occurs.
+// Lower spatial resolution (1km vs 375m) but same FIRMS API/auth.
+const MODIS_SOURCE = "MODIS_NRT";
+
 // How many of the fetched days are actually shown to the user; the extra
 // lookback days are only used to detect persistent (industrial) sources.
 const DISPLAY_DAYS = 2;
@@ -57,7 +62,8 @@ async function fetchViirsSource(mapKey: string, source: string): Promise<FirePoi
       lon: Number(r.longitude),
       acquiredAt: `${r.acq_date}T${r.acq_time?.padStart(4, "0").replace(/(\d{2})(\d{2})/, "$1:$2")}:00Z`,
       confidence: r.confidence,
-      brightness: r.bright_ti4 ? Number(r.bright_ti4) : undefined,
+      // VIIRS uses bright_ti4, MODIS uses brightness for its equivalent channel.
+      brightness: r.bright_ti4 ? Number(r.bright_ti4) : r.brightness ? Number(r.brightness) : undefined,
       frp: r.frp ? Number(r.frp) : undefined,
       satellite: r.satellite,
     }))
@@ -71,7 +77,7 @@ export async function fetchFirmsFires(): Promise<FirePoint[]> {
   }
 
   const results = await Promise.allSettled(
-    VIIRS_SOURCES.map((source) => fetchViirsSource(mapKey, source)),
+    [...VIIRS_SOURCES, MODIS_SOURCE].map((source) => fetchViirsSource(mapKey, source)),
   );
 
   const allFires = results.flatMap((r) => (r.status === "fulfilled" ? r.value : []));
