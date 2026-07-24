@@ -19,7 +19,7 @@ function intensityColor(fire: FirePoint) {
 }
 
 function googleSearchUrl(place: string) {
-  const query = `feu de forêt ${place} incendie actualités heure par heure, chronologie de la progression, et trouve des vidéos TikTok et YouTube montrant ce sinistre`;
+  const query = `feu de forêt ${place} incendie actualités, chronologie de la progression classée par date puis heure par heure, et trouve des vidéos TikTok et YouTube montrant ce sinistre`;
   // udm=50 force l'ouverture directe du Mode IA de Google
   return `https://www.google.com/search?q=${encodeURIComponent(query)}&udm=50`;
 }
