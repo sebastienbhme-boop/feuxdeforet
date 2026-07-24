@@ -1,6 +1,5 @@
 import type { FirePoint } from "./types";
 import { isInMainlandFrance } from "./franceBoundary";
-import { filterPersistentSources, LOOKBACK_DAYS } from "./industrialFilter";
 
 // NASA FIRMS area API returns CSV. Docs: https://firms.modaps.eosdis.nasa.gov/api/area/
 // MAP_KEY is a free key from https://firms.modaps.eosdis.nasa.gov/api/map_key/
@@ -20,8 +19,8 @@ const VIIRS_SOURCES = ["VIIRS_SNPP_NRT", "VIIRS_NOAA20_NRT", "VIIRS_NOAA21_NRT"]
 // Lower spatial resolution (1km vs 375m) but same FIRMS API/auth.
 const MODIS_SOURCE = "MODIS_NRT";
 
-// How many of the fetched days are actually shown to the user; the extra
-// lookback days are only used to detect persistent (industrial) sources.
+// FIRMS area/csv API only accepts a day range of 1-5; we only need enough
+// history to cover the display window plus the polar satellites' pass gaps.
 const DISPLAY_DAYS = 2;
 
 function parseCsv(csv: string): Record<string, string>[] {
@@ -39,7 +38,7 @@ function parseCsv(csv: string): Record<string, string>[] {
 }
 
 async function fetchViirsSource(mapKey: string, source: string): Promise<FirePoint[]> {
-  const url = `${FIRMS_BASE}/${mapKey}/${source}/${FRANCE_BBOX}/${LOOKBACK_DAYS}`;
+  const url = `${FIRMS_BASE}/${mapKey}/${source}/${FRANCE_BBOX}/${DISPLAY_DAYS}`;
 
   const res = await fetch(url, { next: { revalidate: 600 } });
   if (!res.ok) {
@@ -81,8 +80,7 @@ export async function fetchFirmsFires(): Promise<FirePoint[]> {
   );
 
   const allFires = results.flatMap((r) => (r.status === "fulfilled" ? r.value : []));
-  const withoutIndustrialSources = filterPersistentSources(allFires);
 
   const cutoff = Date.now() - DISPLAY_DAYS * 24 * 60 * 60 * 1000;
-  return withoutIndustrialSources.filter((fire) => new Date(fire.acquiredAt).getTime() >= cutoff);
+  return allFires.filter((fire) => new Date(fire.acquiredAt).getTime() >= cutoff);
 }
