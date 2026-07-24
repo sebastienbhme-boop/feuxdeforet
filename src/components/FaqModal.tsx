@@ -35,6 +35,11 @@ const FAQ_ITEMS = [
     answer:
       "C'est normal en dehors des créneaux de passage : il n'y a simplement aucune nouvelle détection satellite disponible depuis le dernier passage. Ce n'est pas un bug.",
   },
+  {
+    question: "Puis-je être averti des nouveaux foyers sans revenir sur le site ?",
+    answer:
+      "Oui, via un flux RSS accessible sur /feed.xml, à ajouter dans un lecteur RSS (Feedly, NetNewsWire, etc.). Il liste les foyers récemment détectés, mis à jour au même rythme que la carte.",
+  },
 ];
 
 export default function FaqModal({ fires, onClose }: { fires: FirePoint[]; onClose: () => void }) {
