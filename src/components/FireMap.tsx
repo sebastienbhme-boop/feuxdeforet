@@ -8,12 +8,13 @@ import { reverseGeocode } from "@/lib/reverseGeocode";
 
 const FRANCE_CENTER: [number, number] = [46.6, 2.5];
 
-// Fresh detections (within a day of the reference time) keep their full
-// intensity color; older ones fade progressively to grey over the following
-// two days, so replaying the timeline shows points arrive in color and age
-// into grey rather than flipping binarily.
-const FRESH_HOURS = 24;
-const FADE_HOURS = 48;
+// Fresh detections (within a few hours of the reference time) keep their
+// full intensity color; older ones fade progressively to grey, so replaying
+// the timeline shows points arrive in color and age into grey rather than
+// flipping binarily. Tuned to reach full grey within the ~48h display
+// window (DISPLAY_DAYS in lib/firms.ts) so the fade is actually visible.
+const FRESH_HOURS = 6;
+const FADE_HOURS = 24;
 const GREY = [156, 163, 175] as const; // #9ca3af
 
 function hexToRgb(hex: string): [number, number, number] {
