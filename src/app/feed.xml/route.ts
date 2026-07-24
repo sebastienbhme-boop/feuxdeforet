@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getFires } from "@/lib/getFires";
-import { reverseGeocodeNearbyCity } from "@/lib/reverseGeocode";
+import { reverseGeocodeDepartment } from "@/lib/reverseGeocode";
+import { withDepartmentArticle } from "@/lib/departmentArticles";
 import type { FirePoint } from "@/lib/types";
 
 // GPS coordinates mean nothing to readers; group fires into rough ~100km
@@ -58,11 +59,7 @@ export async function GET(request: NextRequest) {
   // area instead of per fire keeps this well within that budget.
   const places: string[] = [];
   for (const { latest } of groups) {
-    if (latest.placeName) {
-      places.push(latest.placeName);
-      continue;
-    }
-    const resolved = await reverseGeocodeNearbyCity(latest.lat, latest.lon);
+    const resolved = await reverseGeocodeDepartment(latest.lat, latest.lon);
     places.push(resolved ?? `${latest.lat.toFixed(2)}, ${latest.lon.toFixed(2)}`);
     await new Promise((r) => setTimeout(r, 1100));
   }
@@ -70,10 +67,11 @@ export async function GET(request: NextRequest) {
   const itemsXml = groups
     .map(({ group, latest }, i) => {
       const place = places[i];
+      const placeWithArticle = withDepartmentArticle(place);
       const title =
         group.length > 1
-          ? `${group.length} foyers détectés vers ${place}`
-          : `Foyer détecté vers ${place}`;
+          ? `${group.length} foyers détectés dans ${placeWithArticle}`
+          : `Foyer détecté dans ${placeWithArticle}`;
       const pubDate = new Date(latest.acquiredAt).toUTCString();
       const maxFrp = Math.max(...group.map((f) => f.frp ?? 0));
       const description = [

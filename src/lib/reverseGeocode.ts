@@ -42,13 +42,13 @@ export async function reverseGeocode(lat: number, lon: number): Promise<string |
   }
 }
 
-const nearbyCityCache = new Map<string, string>();
+const departmentCache = new Map<string, string>();
 
-// Same API, but zoomed out to city/county level so it resolves to a well-known
-// nearby town instead of a tiny hamlet — used for grouping fires by rough area.
-export async function reverseGeocodeNearbyCity(lat: number, lon: number): Promise<string | null> {
+// Resolves to the French département (county) name, used to group fires by
+// rough area in the RSS feed instead of raw lat/lon or a tiny hamlet name.
+export async function reverseGeocodeDepartment(lat: number, lon: number): Promise<string | null> {
   const key = `${lat.toFixed(1)},${lon.toFixed(1)}`;
-  const cached = nearbyCityCache.get(key);
+  const cached = departmentCache.get(key);
   if (cached) return cached;
 
   const params = new URLSearchParams({
@@ -66,9 +66,8 @@ export async function reverseGeocodeNearbyCity(lat: number, lon: number): Promis
     if (!res.ok) return null;
     const data = (await res.json()) as NominatimResponse;
     const addr = data.address;
-    const place =
-      addr?.city ?? addr?.town ?? addr?.municipality ?? addr?.county ?? addr?.state ?? addr?.village ?? null;
-    if (place) nearbyCityCache.set(key, place);
+    const place = addr?.county ?? addr?.state ?? addr?.city ?? addr?.town ?? addr?.village ?? null;
+    if (place) departmentCache.set(key, place);
     return place;
   } catch {
     return null;
