@@ -25,12 +25,16 @@ const PASSES = [
   { label: "NOAA-20", color: "bg-amber-600", start: 12 * 60 + 40, duration: 12 },
   { label: "NOAA-21", color: "bg-yellow-700", start: 2 * 60, duration: 12 },
   { label: "NOAA-21", color: "bg-yellow-700", start: 14 * 60, duration: 12 },
+  { label: "Terra", color: "bg-emerald-600", start: 10 * 60 + 30, duration: 12 },
+  { label: "Terra", color: "bg-emerald-600", start: 22 * 60 + 30, duration: 12 },
+  { label: "Aqua", color: "bg-teal-600", start: 13 * 60 + 30, duration: 12 },
+  { label: "Aqua", color: "bg-teal-600", start: 1 * 60 + 30, duration: 12 },
 ];
 
-// Matches isSatellitePassLikely in lib/formatDate.ts: 12h-17h and 0h-5h.
+// Matches isSatellitePassLikely in lib/formatDate.ts: 10h-17h and 0h-5h.
 const NRT_WINDOWS = [
   { start: 0, duration: 5 * 60 },
-  { start: 12 * 60, duration: 5 * 60 },
+  { start: 10 * 60, duration: 7 * 60 },
 ];
 
 function pct(minutes: number): string {
@@ -108,6 +112,12 @@ export default function SatelliteTimeline() {
         </span>
         <span className="flex items-center gap-1.5">
           <span className="h-2 w-2 rounded-full bg-yellow-700" /> NOAA-21
+        </span>
+        <span className="flex items-center gap-1.5">
+          <span className="h-2 w-2 rounded-full bg-emerald-600" /> Terra (MODIS)
+        </span>
+        <span className="flex items-center gap-1.5">
+          <span className="h-2 w-2 rounded-full bg-teal-600" /> Aqua (MODIS)
         </span>
         <span className="flex items-center gap-1.5">
           <span className="h-2 w-2 rounded bg-sky-100 dark:bg-sky-950" /> Fenêtre de publication (polling 10 min)

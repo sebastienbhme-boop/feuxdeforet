@@ -8,17 +8,17 @@ const FAQ_ITEMS = [
   {
     question: "D'où viennent les données ?",
     answer:
-      "De deux sources publiques : NASA FIRMS (détections thermiques des satellites VIIRS) et Copernicus EFFIS (foyers actifs européens). Aucune saisie manuelle.",
+      "De deux sources publiques : NASA FIRMS (détections thermiques des satellites VIIRS Suomi NPP, NOAA-20, NOAA-21, et MODIS Terra/Aqua) et Copernicus EFFIS (foyers actifs européens). Aucune saisie manuelle.",
   },
   {
     question: "Les données sont-elles en direct, en continu ?",
     answer:
-      "Non. Les satellites VIIRS (Suomi NPP, NOAA-20, NOAA-21) sont en orbite polaire : chacun ne survole la France que 2 fois par jour, pas en continu. Résultat : les données arrivent par paquets à chaque passage, avec des trous de plusieurs heures entre deux passages, pas un flux ininterrompu.",
+      "Non. Les satellites (VIIRS et MODIS) sont en orbite polaire : chacun ne survole la France que 2 fois par jour, pas en continu. Résultat : les données arrivent par paquets à chaque passage, avec des trous de plusieurs heures entre deux passages, pas un flux ininterrompu.",
   },
   {
     question: "À quelle heure les satellites passent-ils ?",
     answer:
-      "Environ en début d'après-midi (12h40-14h, heure de Paris) et en pleine nuit (00h40-02h). Les 3 satellites sont décalés de quelques dizaines de minutes entre eux, ce qui étale chaque créneau sur 1h-1h30.",
+      "Les 3 satellites VIIRS passent en début d'après-midi (12h40-14h, heure de Paris) et en pleine nuit (00h40-02h). MODIS (Terra/Aqua) ajoute des passages supplémentaires en fin de matinée, ce qui étale la couverture sur une plage plus large.",
   },
   {
     question: "Pourquoi une donnée n'apparaît-elle pas tout de suite après un passage ?",
