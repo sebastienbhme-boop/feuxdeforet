@@ -1,5 +1,7 @@
 "use client";
 
+import SatelliteTimeline from "./SatelliteTimeline";
+
 const FAQ_ITEMS = [
   {
     question: "D'où viennent les données ?",
@@ -55,6 +57,9 @@ export default function FaqModal({ onClose }: { onClose: () => void }) {
           >
             ✕
           </button>
+        </div>
+        <div className="mb-4">
+          <SatelliteTimeline />
         </div>
         <dl className="space-y-4">
           {FAQ_ITEMS.map((item) => (
