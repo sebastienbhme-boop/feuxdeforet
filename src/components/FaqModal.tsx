@@ -1,6 +1,8 @@
 "use client";
 
+import type { FirePoint } from "@/lib/types";
 import SatelliteTimeline from "./SatelliteTimeline";
+import LastSatelliteUpdates from "./LastSatelliteUpdates";
 
 const FAQ_ITEMS = [
   {
@@ -35,7 +37,7 @@ const FAQ_ITEMS = [
   },
 ];
 
-export default function FaqModal({ onClose }: { onClose: () => void }) {
+export default function FaqModal({ fires, onClose }: { fires: FirePoint[]; onClose: () => void }) {
   return (
     <div
       className="fixed inset-0 flex items-center justify-center bg-black/40 sm:p-4"
@@ -58,8 +60,9 @@ export default function FaqModal({ onClose }: { onClose: () => void }) {
             ✕
           </button>
         </div>
-        <div className="mb-4">
+        <div className="mb-4 space-y-3">
           <SatelliteTimeline />
+          <LastSatelliteUpdates fires={fires} />
         </div>
         <dl className="space-y-4">
           {FAQ_ITEMS.map((item) => (
