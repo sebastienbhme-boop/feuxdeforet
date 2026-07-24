@@ -38,12 +38,12 @@ const FAQ_ITEMS = [
 export default function FaqModal({ onClose }: { onClose: () => void }) {
   return (
     <div
-      className="fixed inset-0 flex items-center justify-center bg-black/40 p-4"
+      className="fixed inset-0 flex items-center justify-center bg-black/40 sm:p-4"
       style={{ zIndex: 10000 }}
       onClick={onClose}
     >
       <div
-        className="max-h-[85vh] w-full max-w-lg overflow-y-auto rounded-lg bg-white p-5 shadow-xl dark:bg-zinc-900"
+        className="h-full w-full overflow-y-auto bg-white p-4 shadow-xl dark:bg-zinc-900 sm:h-auto sm:max-h-[85vh] sm:max-w-lg sm:rounded-lg sm:p-5"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="mb-4 flex items-center justify-between">
@@ -53,7 +53,7 @@ export default function FaqModal({ onClose }: { onClose: () => void }) {
           <button
             onClick={onClose}
             aria-label="Fermer"
-            className="rounded p-1 text-zinc-500 hover:bg-zinc-100 dark:hover:bg-zinc-800"
+            className="rounded p-2 text-lg text-zinc-500 hover:bg-zinc-100 dark:hover:bg-zinc-800"
           >
             ✕
           </button>

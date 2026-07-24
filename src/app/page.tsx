@@ -68,10 +68,10 @@ export default function Home() {
 
   return (
     <div className="flex h-screen flex-col">
-      <header className="flex items-center justify-between border-b border-zinc-200 px-4 py-3 dark:border-zinc-800">
-        <div>
-          <h1 className="text-xl font-bold text-orange-600">🔥 Feux de forêt en direct</h1>
-          <p className="text-xs text-zinc-500">
+      <header className="flex items-center justify-between gap-2 border-b border-zinc-200 px-4 py-3 dark:border-zinc-800">
+        <div className="min-w-0">
+          <h1 className="truncate text-lg font-bold text-orange-600 sm:text-xl">🔥 Feux de forêt en direct</h1>
+          <p className="truncate text-xs text-zinc-500">
             {loading
               ? "Chargement des foyers actifs…"
               : `${visibleFires.length}/${fires.length} foyer(s) affiché(s)${updatedAt ? ` · mis à jour ${formatParisTime(updatedAt)} (heure de Paris)` : ""}`}
@@ -79,7 +79,7 @@ export default function Home() {
         </div>
         <button
           onClick={() => setFaqOpen(true)}
-          className="rounded border border-zinc-300 px-3 py-1.5 text-xs font-medium text-zinc-700 hover:bg-zinc-100 dark:border-zinc-700 dark:text-zinc-300 dark:hover:bg-zinc-800"
+          className="shrink-0 rounded border border-zinc-300 px-3 py-1.5 text-xs font-medium text-zinc-700 hover:bg-zinc-100 dark:border-zinc-700 dark:text-zinc-300 dark:hover:bg-zinc-800"
         >
           FAQ
         </button>
