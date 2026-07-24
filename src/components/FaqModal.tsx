@@ -36,7 +36,8 @@ const FAQ_ITEMS = [
 export default function FaqModal({ onClose }: { onClose: () => void }) {
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4"
+      className="fixed inset-0 flex items-center justify-center bg-black/40 p-4"
+      style={{ zIndex: 10000 }}
       onClick={onClose}
     >
       <div
