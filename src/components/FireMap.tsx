@@ -59,7 +59,7 @@ function FireMarker({ fire }: { fire: FirePoint }) {
       <Popup>
         <div className="text-sm">
           <p className="font-semibold">{place}</p>
-          <p>Source : {fire.source}</p>
+          <p>Source : {fire.source}{fire.satellite ? ` (${fire.satellite})` : ""}</p>
           <p>Détecté : {formatParisDateTime(fire.acquiredAt)} (heure de Paris)</p>
           {fire.frp !== undefined && <p>Puissance radiative : {fire.frp} MW</p>}
           <div className="mt-2 flex justify-center">
