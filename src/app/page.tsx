@@ -3,7 +3,7 @@
 import dynamic from "next/dynamic";
 import { useEffect, useMemo, useState } from "react";
 import type { FirePoint } from "@/lib/types";
-import { formatParisTime, isNightTime, isSatellitePassLikely } from "@/lib/formatDate";
+import { formatParisTime, isSatellitePassLikely } from "@/lib/formatDate";
 import TimelineSlider from "@/components/TimelineSlider";
 import FaqModal from "@/components/FaqModal";
 
@@ -66,8 +66,6 @@ export default function Home() {
     return fires.filter((f) => new Date(f.acquiredAt).getTime() <= timelineValue);
   }, [fires, timelineValue]);
 
-  const isNight = timelineValue !== null && isNightTime(timelineValue);
-
   return (
     <div className="flex h-screen flex-col">
       <header className="flex items-center justify-between border-b border-zinc-200 px-4 py-3 dark:border-zinc-800">
@@ -94,7 +92,7 @@ export default function Home() {
         </div>
       )}
       <main className="flex flex-1 overflow-hidden">
-        <FireMap fires={visibleFires} isNight={isNight} />
+        <FireMap fires={visibleFires} />
       </main>
       {fires.length > 0 && timelineValue !== null && (
         <TimelineSlider

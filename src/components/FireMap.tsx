@@ -79,22 +79,13 @@ function FireMarker({ fire }: { fire: FirePoint }) {
   );
 }
 
-export default function FireMap({ fires, isNight = false }: { fires: FirePoint[]; isNight?: boolean }) {
+export default function FireMap({ fires }: { fires: FirePoint[] }) {
   return (
     <MapContainer center={FRANCE_CENTER} zoom={6} className="h-full w-full">
-      {isNight ? (
-        <TileLayer
-          key="dark"
-          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>'
-          url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
-        />
-      ) : (
-        <TileLayer
-          key="light"
-          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-        />
-      )}
+      <TileLayer
+        attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+        url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+      />
       {fires.length > 0 && <FitToData fires={fires} />}
       {fires.map((fire) => (
         <FireMarker key={fire.id} fire={fire} />
